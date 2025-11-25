@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DuckDuck</title>
+
+<style>
+html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+    font-family: "Segoe UI", sans-serif;
+    text-align: center;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow: hidden;
+    transition: background 0.3s, color 0.3s;
+}
+
+* {
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+}
+
+body.light {
+    background: linear-gradient(135deg, #f2d7c9, #f7ede2);
+    color: #3a2618;
+}
+
+body.dark {
+    background: linear-gradient(135deg, #1e1e1e, #2c2c2c);
+    color: #f0f0f0;
+}
+
+h1 {
+    margin-top: 20px;
+    font-size: clamp(24px,5vw,36px);
+    font-weight: 700;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+}
+
+#counter {
+    font-size: clamp(20px,4vw,32px);
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#cpsCounter {
+    font-size: clamp(14px,3vw,20px);
+    margin-top: 3px;
+    font-weight: 500;
+}
+
+#cookie {
+    width: clamp(150px,30vw,260px);
+    height: clamp(150px,30vw,260px);
+    margin-top: 10px;
+    cursor: pointer;
+    border-radius: 50%;
+    -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    transition: transform 0.08s ease;
+}
+
+#cookie:active {
+    transform: scale(0.9);
+}
+
+.upgrade-area {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.upgrade {
+    width: clamp(80px,15vw,110px);
+    height: clamp(80px,15vw,110px);
+    border-radius: 12px;
+    border: 2px solid currentColor;
+    background: rgba(255,255,255,0.6);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(10px,2.5vw,14px);
+    transition: transform 0.3s ease, opacity 0.3s ease, bottom 0.3s ease;
+    position: relative;
+    bottom: -20px;
+    opacity: 0;
+    visibility: hidden;
+}
+
+.upgrade img {
+    max-width: 60%;
+    max-height: 50%;
+    margin-bottom: 4px;
+}
+
+.upgrade.show {
+    opacity: 1;
+    visibility: visible;
+    bottom: 0px;
+}
+
+.upgrade:active {
+    transform: scale(0.85);
+}
+
+#themeToggle {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    width: 36px;
+    height: 36px;
+    background-size: cover;
+    border: none;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.3s;
+}
+
+body.light #themeToggle {
+    background-image: url('https://img.icons8.com/ios-filled/50/000000/sun--v1.png');
+    background-color: transparent;
+}
+
+body.dark #themeToggle {
+    background-image: url('https://img.icons8.com/ios-filled/50/ffffff/moon-symbol.png');
+    background-color: transparent;
+}
+
+.duck-img {
+    -webkit-user-drag: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+}
+</style>
+</head>
+<body class="light">
+
+<h1>Duck Game (revenge)</h1>
+
+<div id="counter">0 ölü ördek</div>
+<div id="cpsCounter">0 ölü ördek / saniye</div>
+
+<!-- Cookie resmi -->
+<img id="cookie" class="duck-img" src="duck.png" alt="duck">
+
+<div class="upgrade-area">
+    <div class="upgrade" data-name="Bıçak" data-cost="15" data-cps="0.1" data-logo="ozel1.png">
+        <img class="duck-img" src="ozel1.png" alt="Bıçak">
+        Bıçak<br><span class="price">15</span>
+    </div>
+    <div class="upgrade" data-name="Silah" data-cost="60" data-cps="1" data-logo="ozel2.png">
+        <img class="duck-img" src="ozel2.png" alt="Silah">
+        Silah<br><span class="price">60</span>
+    </div>
+</div>
+
+<button id="themeToggle"></button>
+
+<script>
+let ducks = 0;
+let clickPower = 1;
+let cps = 0;
+let fractionalDucks = 0;
+
+const counter = document.getElementById("counter");
+const cpsCounter = document.getElementById("cpsCounter");
+const cookie = document.getElementById("cookie");
+const upgrades = document.querySelectorAll(".upgrade");
+const themeToggle = document.getElementById("themeToggle");
+const body = document.body;
+
+// Resim hata kontrolü
+document.querySelectorAll('.duck-img').forEach(img=>{
+    img.onerror = function(){ 
+        this.src='https://http.cat/404'; 
+    };
+});
+
+// Güncel counter
+function updateCounter() {
+    counter.textContent = Math.floor(ducks) + " ölü ördek";
+    cpsCounter.textContent = cps.toFixed(1) + " ölü ördek / saniye";
+    upgrades.forEach(upg=>{
+        const cost = parseInt(upg.dataset.cost);
+        const priceEl = upg.querySelector(".price");
+        priceEl.textContent = cost;
+        if(ducks >= cost && !upg.classList.contains("show")){
+            upg.classList.add("show");
+        }
+    });
+}
+
+cookie.addEventListener("click", ()=>{
+    ducks += clickPower;
+    updateCounter();
+});
+
+upgrades.forEach(upg=>{
+    upg.addEventListener("click", ()=>{
+        let cost = parseInt(upg.dataset.cost);
+        let addCps = parseFloat(upg.dataset.cps);
+        if(ducks >= cost){
+            ducks -= cost;
+            cps += addCps;
+            cost *= 2;
+            upg.dataset.cost = cost;
+            updateCounter();
+        }
+    });
+});
+
+// CPS fractional
+setInterval(()=>{
+    fractionalDucks += cps / 10;
+    if(fractionalDucks >= 1){
+        let add = Math.floor(fractionalDucks);
+        ducks += add;
+        fractionalDucks -= add;
+        updateCounter();
+    }
+},100);
+
+// Tema değiştirme
+themeToggle.addEventListener("click", ()=>{
+    if(body.classList.contains("light")){
+        body.classList.replace("light","dark");
+    } else {
+        body.classList.replace("dark","light");
+    }
+    updateCounter();
+});
+
+updateCounter();
+</script>
+
+</body>
+</html>
