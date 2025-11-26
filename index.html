@@ -147,8 +147,31 @@ body.dark #themeToggle {
     user-select: none;
     -webkit-user-select: none;
 }
+
+/* --- TAM EKRAN OLMAYAN OYNATILAMAZ OVERLAY VIDEO --- */
+
+#videoOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: black;
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 999999;
+}
+
+#videoOverlay video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    pointer-events: none; /* Dokunulamaz */
+}
 </style>
 </head>
+
 <body class="light">
 
 <h1>Duck Game (revenge)</h1>
@@ -157,26 +180,34 @@ body.dark #themeToggle {
 <div id="cpsCounter">0 ölü ördek / saniye</div>
 
 <!-- Cookie resmi -->
-<img id="cookie" class="duck-img" src="duck.png" alt="duck">
+<img id="cookie" class="duck-img" src="duck.png" alt="duck" onerror="imageFallback(this)">
 
 <div class="upgrade-area">
-    <div class="upgrade" data-name="Bıçak" data-cost="15" data-cps="0.1" data-logo="ozel1.png">
-        <img class="duck-img" src="ozel1.png" alt="Bıçak">
+    <div class="upgrade" data-name="Bıçak" data-cost="15" data-cps="0.1">
+        <img class="duck-img" src="ozel1.png" alt="Bıçak" onerror="imageFallback(this)">
         Bıçak<br><span class="price">15</span>
     </div>
-    <div class="upgrade" data-name="Silah" data-cost="60" data-cps="1" data-logo="ozel2.png">
-        <img class="duck-img" src="ozel2.png" alt="Silah">
+    <div class="upgrade" data-name="Silah" data-cost="60" data-cps="1">
+        <img class="duck-img" src="ozel2.png" alt="Silah" onerror="imageFallback(this)">
         Silah<br><span class="price">60</span>
     </div>
 </div>
 
 <button id="themeToggle"></button>
 
+<!-- VIDEO OVERLAY -->
+<div id="videoOverlay">
+    <video id="scareVideo">
+        <source src="help.mp4" type="video/mp4">
+    </video>
+</div>
+
 <script>
 let ducks = 0;
 let clickPower = 1;
 let cps = 0;
 let fractionalDucks = 0;
+let videoPlayed = false; // 70'e ulaşınca sadece 1 kez çalışsın
 
 const counter = document.getElementById("counter");
 const cpsCounter = document.getElementById("cpsCounter");
@@ -185,36 +216,55 @@ const upgrades = document.querySelectorAll(".upgrade");
 const themeToggle = document.getElementById("themeToggle");
 const body = document.body;
 
-// Resim hata kontrolü
-document.querySelectorAll('.duck-img').forEach(img=>{
-    img.onerror = function(){ 
-        this.src='https://http.cat/404'; 
-    };
-});
+const overlay = document.getElementById("videoOverlay");
+const video = document.getElementById("scareVideo");
 
-// Güncel counter
+/* -------- RESİM FALLBACK -------- */
+
+function imageFallback(img){
+    img.onerror = null;
+    img.src = "https://http.cat/404";
+}
+
+/* -------- COUNTER GÜNCELLE -------- */
+
 function updateCounter() {
     counter.textContent = Math.floor(ducks) + " ölü ördek";
     cpsCounter.textContent = cps.toFixed(1) + " ölü ördek / saniye";
-    upgrades.forEach(upg=>{
+
+    // Upgrade açılma
+    upgrades.forEach(upg => {
         const cost = parseInt(upg.dataset.cost);
         const priceEl = upg.querySelector(".price");
         priceEl.textContent = cost;
-        if(ducks >= cost && !upg.classList.contains("show")){
+
+        if (ducks >= cost && !upg.classList.contains("show")) {
             upg.classList.add("show");
         }
     });
+
+    // 70 olduğunda video aç
+    if (ducks >= 70 && !videoPlayed) {
+        videoPlayed = true;
+        overlay.style.display = "flex";
+        video.play();
+    }
 }
+
+/* -------- TIKLAMA -------- */
 
 cookie.addEventListener("click", ()=>{
     ducks += clickPower;
     updateCounter();
 });
 
+/* -------- UPGRADE ALMA -------- */
+
 upgrades.forEach(upg=>{
     upg.addEventListener("click", ()=>{
         let cost = parseInt(upg.dataset.cost);
         let addCps = parseFloat(upg.dataset.cps);
+
         if(ducks >= cost){
             ducks -= cost;
             cps += addCps;
@@ -225,7 +275,8 @@ upgrades.forEach(upg=>{
     });
 });
 
-// CPS fractional
+/* -------- CPS -------- */
+
 setInterval(()=>{
     fractionalDucks += cps / 10;
     if(fractionalDucks >= 1){
@@ -236,7 +287,8 @@ setInterval(()=>{
     }
 },100);
 
-// Tema değiştirme
+/* -------- TEMA -------- */
+
 themeToggle.addEventListener("click", ()=>{
     if(body.classList.contains("light")){
         body.classList.replace("light","dark");
@@ -245,6 +297,14 @@ themeToggle.addEventListener("click", ()=>{
     }
     updateCounter();
 });
+
+/* -------- VIDEO BİTİNCE KAPAN -------- */
+
+video.onended = () => {
+    video.pause();
+    video.currentTime = 0;
+    overlay.style.display = "none";
+};
 
 updateCounter();
 </script>
