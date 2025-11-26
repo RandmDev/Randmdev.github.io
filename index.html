@@ -244,7 +244,7 @@ function updateCounter() {
     });
 
     // 70 olduğunda video aç
-    if (ducks >= 70 && !videoPlayed) {
+    if (ducks >= 150 && !videoPlayed) {
         videoPlayed = true;
         overlay.style.display = "flex";
         video.play();
@@ -304,6 +304,7 @@ video.onended = () => {
     video.pause();
     video.currentTime = 0;
     overlay.style.display = "none";
+    ducks = 1500;
 };
 
 updateCounter();
